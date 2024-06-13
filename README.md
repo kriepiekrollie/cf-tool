@@ -1,3 +1,4 @@
 # clif
-clif stands for (Command Line Interface)-forces.
-It is a command line tool for codeforces.
+clif is a command line interface tool for codeforces.
+clif stands for CLI-forces.
+
