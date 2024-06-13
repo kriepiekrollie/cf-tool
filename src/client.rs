@@ -1,4 +1,4 @@
-use crate::cli::contest::ContestArgs;//, ContestInfo};
+use crate::cli::ContestArgs;
 
 pub fn parse_samples(args: &ContestArgs) {
     // let contest_info = ContestInfo::new(args);
