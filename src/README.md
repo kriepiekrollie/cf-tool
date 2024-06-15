@@ -17,7 +17,7 @@ This file (kinda) contains code relating to configuration.
 The functions here actually _do_ the configuring and the read and writing of files etc.
 
 ## commands
-This folder (todo) contains code relating to running commands.
+This file (todo) contains code relating to running commands.
 
 The functions here actually _do_ the commands.
 

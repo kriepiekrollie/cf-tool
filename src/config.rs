@@ -1,19 +1,21 @@
 use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
-use serde::{ Serialize, Deserialize };
-use crate::cli::{ TemplateArgs, ConfigArgs };
 use std::path::{ Path, PathBuf };
-use colored::Colorize;
 use std::fmt::Debug;
+
+use serde::{ Serialize, Deserialize };
+use colored::Colorize;
+
+use crate::cli::{ TemplateArgs, ConfigArgs };
 
 // Maybe i move this out to a module called session.rs?
 pub struct LoginDetails {
-    pub username: String,
-    pub password_hash: String,
+    pub handle_or_email: String,
+    pub password: String,
 }
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Default, Clone, Serialize, Deserialize)]
 pub struct Template {
     pub alias: String,
     pub lang: usize,
@@ -23,11 +25,11 @@ pub struct Template {
     pub scripts: TemplateScripts,
 }
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Default, Clone, Serialize, Deserialize)]
 pub struct TemplateScripts {
-    pub before: Option<String>,
-    pub execute: Option<String>,
-    pub after: Option<String>,
+    pub before: String,
+    pub execute: String,
+    pub after: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -49,17 +51,16 @@ impl Config {
 
 fn get_template(config: &Config, args: &TemplateArgs) -> Template {
     if let Some(alias) = &args.alias {
+        config.templates.iter().find(|t| t.alias == *alias).unwrap().clone()
     } else if let Some(index) = &args.index {
+        config.templates.get(*index as usize)
+            .unwrap_or_else(|| panic!("Invalid index."))
+            .clone()
+    } else if config.default >= 0 {
+        config.templates.get(config.default as usize).unwrap().clone()
     } else {
-    }
-    Template {
-        alias: "sussy".to_string(),
-        lang: 0,
-        path: "amogus".to_string(),
-        suffix: Vec::new(),
-        scripts: TemplateScripts {
-            before: None, execute: None, after: None,
-        },
+        // You don't have a template yet...
+        Template::default()
     }
 }
 
@@ -75,5 +76,10 @@ pub fn set_default_template(args: &TemplateArgs) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub fn login(details: &LoginDetails) {
+pub fn login(details: LoginDetails) {
+    crate::client::login(details);
+    // let entry = keyring::Entry::new("cftool", &details.handle).unwrap();
+    // entry.set_password("amogus");
+    // let p = entry.get_password().unwrap();
+    // println!("{}", p);
 }

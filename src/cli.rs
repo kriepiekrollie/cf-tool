@@ -13,7 +13,7 @@ pub struct Cli {
 }
 
 /*
- * Currently, cf_tool supports the following subcommands:
+ * Currently, cf supports the following subcommands:
  *   config
  *   parse
  *   gen
@@ -45,7 +45,7 @@ pub enum Commands {
     /// Test code locally
     Test,
 
-    /// Open the Github page of cf_tool
+    /// Open the Github page of cf-tool
     Source,
 }
 
@@ -179,37 +179,95 @@ pub enum TemplateConfigCommands {
     Delete(TemplateArgs)
 }
 
-fn prompt_until_valid<T: std::str::FromStr + std::fmt::Debug, F: Fn(&T) -> bool>(name: &str, valid: F) -> T {
-    let mut user_input = rprompt::prompt_reply(format!("{}: ", name)).unwrap();
-    let mut index = user_input.parse::<T>();
+fn prompt_until_valid(prompt: &str, invalid_message: &dyn Fn(&String) -> Option<&str>) -> String {
+    let mut user_input = rprompt::prompt_reply(prompt).unwrap();
     loop {
-        if let Ok(result) = index {
-            if valid(&result) {
-                return result;
+        match invalid_message(&user_input) {
+            None => {
+                return user_input;
+            }
+            Some(msg) => {
+                println!("{}", msg.red().bold());
+                user_input = rprompt::prompt_reply(prompt).unwrap();
             }
         }
-        user_input = rprompt::prompt_reply(format!("invalid {}. please try again: ", name)).unwrap();
-        index = user_input.parse::<T>();
     }
 }
 
+use colored::Colorize;
 use crate::config::{ Template, TemplateScripts, LoginDetails };
 
 pub fn prompt_new_template() -> Template {
+    println!("{}", "Add Template".blue().bold());
+    println!("");
+
+    println!("{}", "Choose an alias (alphanumeric characters)".blue().bold());
+    let alias: String = prompt_until_valid("alias: ", &|user_input: &String| {
+        if user_input.len() == 0 {
+            Some("The alias can't be empty.")
+        } else if !user_input.chars().all(|c| c.is_alphanumeric()) {
+            Some("The alias must consist of only alphanumeric characters.")
+        } else {
+            None
+        }
+    });
+    println!("");
+
+    println!("{}", "Choose a language (index)".blue().bold());
+    let lang: usize = prompt_until_valid("lang: ", &|user_input: &String| {
+        match user_input.parse::<usize>() {
+            Ok(x) => 
+                if 100 < x {
+                    Some("Language must be an integer between 0 and 100.")
+                } else {
+                    None
+                }
+            Err(e) => Some("Language must be a valid integer.")
+        }
+    }).parse::<usize>().unwrap();
+    println!("");
+
+    println!("{}", "Input the path to the template code.".blue().bold());
+    let path: String = prompt_until_valid("path: ", &|user_input: &String| {
+        None
+    });
+    println!("");
+
+    println!("{}", "Write a script to run before executing the code.".blue().bold());
+    let before_script = rprompt::prompt_reply("before: ").unwrap();
+    println!("");
+
+    println!("{}", "Write a script to execute the code.".blue().bold());
+    let execute_script = rprompt::prompt_reply("execute: ").unwrap();
+    println!("");
+
+    println!("{}", "Write a script to run after executing the code.".blue().bold());
+    let after_script = rprompt::prompt_reply("after: ").unwrap();
+    println!("");
+
+    println!("{}", "Template successfully added!".green().bold());
+    println!("{}", "Failed to add template!".red().bold());
+
     Template {
-        alias: "sussy".to_string(),
-        lang: 0,
-        path: "amogus".to_string(),
+        alias: alias,
+        lang: lang,
+        path: path,
         suffix: Vec::new(),
         scripts: TemplateScripts {
-            before: None, execute: None, after: None,
+            before: before_script,
+            execute: execute_script,
+            after: after_script,
         },
     }
 }
 
 pub fn prompt_login_details() -> LoginDetails {
+    println!("{}", "Login".blue().bold());
+    let handle_or_email = rprompt::prompt_reply("handle/email: ").unwrap();
+    let password = rpassword::prompt_password("password: ").unwrap();
+    
     LoginDetails {
-        username: "bruh".to_string(),
-        password_hash: "amogus".to_string(),
+        handle_or_email: handle_or_email,
+        password: password,
     }
 }
