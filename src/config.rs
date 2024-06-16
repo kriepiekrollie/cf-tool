@@ -1,17 +1,15 @@
 use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
-use std::path::{ Path, PathBuf };
+use std::path::{Path, PathBuf};
 use std::fmt::Debug;
-
-use serde::{ Serialize, Deserialize };
+use serde::{Serialize, Deserialize};
 use colored::Colorize;
+use crate::cli::{TemplateArgs, ConfigArgs};
 
-use crate::cli::{ TemplateArgs, ConfigArgs };
-
-// Maybe i move this out to a module called session.rs?
+#[derive(Serialize, Deserialize, Debug)]
 pub struct LoginDetails {
-    pub handle_or_email: String,
+    pub handle: String,
     pub password: String,
 }
 
@@ -45,8 +43,26 @@ impl Config {
             default: -1,
         }
     }
-    // pub fn load() -> Result<Self, Box<dyn Error>> {
-    // pub fn load_or_new() -> Result<Self, Box<dyn Error>> {
+    pub fn load(path: &PathBuf) -> Result<Self, Box<dyn Error>> {
+        let file = File::open(path)?;
+        let reader = BufReader::new(file);
+        let config: Self = serde_json::from_reader(reader)?;
+        Ok(config)
+    }
+    pub fn load_or_new(path: &PathBuf) -> Result<Self, Box<dyn Error>> {
+        if path.exists() {
+            Self::load(path)
+        } else {
+            let config = Self::new();
+            config.save(path)?;
+            Ok(config)
+        }
+    }
+    pub fn save(&self, path: &Path) -> Result<(), Box<dyn Error>> {
+        let file = File::create(path)?;
+        serde_json::to_writer_pretty(file, self)?;
+        Ok(())
+    }
 }
 
 fn get_template(config: &Config, args: &TemplateArgs) -> Template {
@@ -74,12 +90,4 @@ pub fn delete_template(args: &TemplateArgs) -> Result<(), Box<dyn Error>> {
 
 pub fn set_default_template(args: &TemplateArgs) -> Result<(), Box<dyn Error>> {
     Ok(())
-}
-
-pub fn login(details: LoginDetails) {
-    crate::client::login(details);
-    // let entry = keyring::Entry::new("cftool", &details.handle).unwrap();
-    // entry.set_password("amogus");
-    // let p = entry.get_password().unwrap();
-    // println!("{}", p);
 }

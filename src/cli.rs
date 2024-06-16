@@ -1,4 +1,4 @@
-use clap::{ Args, Parser, Subcommand };
+use clap::{Args, Parser, Subcommand};
 
 /*
  * This module declares how the user can interact with the tool.
@@ -267,7 +267,7 @@ pub fn prompt_login_details() -> LoginDetails {
     let password = rpassword::prompt_password("password: ").unwrap();
     
     LoginDetails {
-        handle_or_email: handle_or_email,
+        handle: handle_or_email,
         password: password,
     }
 }
