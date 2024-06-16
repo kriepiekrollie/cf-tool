@@ -1,6 +1,7 @@
 mod cli;
 mod config;
 mod client;
+mod utils;
 use clap::Parser;
 use anyhow::{Context,Result};
 
@@ -39,9 +40,9 @@ fn main() {
                             config::set_default_template(&template_args).unwrap(),
                     },
             },
-        cli::Commands::Parse(contest_args) => client.parse_sample_testcases(&contest_args),
+        cli::Commands::Parse(contest_args) => client.parse_sample_testcases(&contest_args, &configuration.cf_root),
         cli::Commands::Gen(template_args) => generate_file(&template_args),
-        cli::Commands::Submit => client.submit_code(),
+        cli::Commands::Submit => client.submit_code(&configuration.cf_root),
         cli::Commands::Test => test_code(),
 
         cli::Commands::Source => {
