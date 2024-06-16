@@ -17,7 +17,7 @@ pub struct LoginDetails {
 pub struct Template {
     pub alias: String,
     pub lang: usize,
-    pub path: String,
+    pub path: PathBuf,
     pub suffix: Vec<String>,
     
     pub scripts: TemplateScripts,
@@ -34,6 +34,7 @@ pub struct TemplateScripts {
 pub struct Config {
     pub templates: Vec<Template>,
     pub default: isize,
+    pub cf_root: PathBuf,
 }
 
 impl Config {
@@ -41,6 +42,7 @@ impl Config {
         Self {
             templates: Vec::new(),
             default: -1,
+            cf_root: std::env::current_dir().unwrap().join("cf")
         }
     }
     pub fn load(path: &PathBuf) -> Result<Self, Box<dyn Error>> {

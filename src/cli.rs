@@ -251,7 +251,7 @@ pub fn prompt_new_template() -> Template {
     Template {
         alias: alias,
         lang: lang,
-        path: path,
+        path: path.into(),
         suffix: Vec::new(),
         scripts: TemplateScripts {
             before: before_script,

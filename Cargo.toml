@@ -7,11 +7,13 @@ description = "cf-tool is a command line interface tool for Codeforces"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = { version = "1.0.86", features = ["backtrace"] }
 clap = { version = "4.5.7", features = ["derive"] }
 colored = "2.1.0"
 dirs = "5.0.1"
 keyring = "2.3.3"
 open = "5.1.4"
+pathdiff = "0.2.1"
 rand = "0.8.5"
 reqwest = { version = "0.12.4", features = ["blocking", "cookies"] }
 reqwest_cookie_store = { version = "0.8.0", features = ["serde"] }

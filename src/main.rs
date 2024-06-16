@@ -2,6 +2,7 @@ mod cli;
 mod config;
 mod client;
 use clap::Parser;
+use anyhow::{Context,Result};
 
 fn generate_file(_args: &cli::TemplateArgs) {
     println!("Generating file.");
@@ -15,16 +16,16 @@ fn main() {
 
     let config_dir = dirs::config_dir().unwrap().join("cf-tool");
     std::fs::create_dir_all(&config_dir).unwrap();
-    let configuration = config::Config::load_or_new(&config_dir.join("config.json"));
-    let mut client = client::Client::load_or_new(&config_dir.join("session.json"));
+    let configuration = config::Config::load_or_new(&config_dir.join("config.json")).unwrap();
+    let client = client::Client::load_or_new(&config_dir.join("session.json"));
 
     match &args.command {
         cli::Commands::Config(config_args) =>
             match &config_args.command {
-                cli::ConfigCommands::Login => {
-                    client.login(cli::prompt_login_details());
-                    client.save(&config_dir.join("session.json"));
-                },
+                cli::ConfigCommands::Login => 
+                    if client.login(cli::prompt_login_details()) {
+                        client.save(&config_dir.join("session.json"));
+                    },
                 cli::ConfigCommands::Template(template_config_args) =>
                     match &template_config_args.command {
                         cli::TemplateConfigCommands::Add =>
@@ -35,7 +36,7 @@ fn main() {
                             config::set_default_template(&template_args).unwrap(),
                     },
             },
-        cli::Commands::Parse(contest_args) => client.parse_samples(&contest_args),
+        cli::Commands::Parse(contest_args) => client.parse_sample_testcases(&contest_args),
         cli::Commands::Gen(template_args) => generate_file(&template_args),
         cli::Commands::Submit => client.submit_code(),
         cli::Commands::Test => test_code(),
@@ -43,10 +44,7 @@ fn main() {
         cli::Commands::Source => {
             let url = "https://www.github.com/";
             open::that(url)
-            .unwrap_or_else(|_| panic!(
-                "Failed to open link in browser. Maybe just copy this instead: {}",
-                url
-            ))
+                .unwrap_or_else(|_| println!("Failed to open link in browser: {}", url));
         }
     }
 }
