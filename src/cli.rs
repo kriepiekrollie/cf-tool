@@ -13,7 +13,7 @@ pub struct Cli {
 }
 
 /*
- * Currently, cf supports the following subcommands:
+ * Currently, cf plans to support the following subcommands:
  *   config
  *   parse
  *   gen

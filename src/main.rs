@@ -16,15 +16,18 @@ fn main() {
 
     let config_dir = dirs::config_dir().unwrap().join("cf-tool");
     std::fs::create_dir_all(&config_dir).unwrap();
-    let configuration = config::Config::load_or_new(&config_dir.join("config.json")).unwrap();
-    let client = client::Client::load_or_new(&config_dir.join("session.json"));
+    let config_file_path = config_dir.join("config.json");
+    let session_file_path = config_dir.join("session.json");
+
+    let configuration = config::Config::load_or_new(&config_file_path).unwrap();
+    let mut client = client::Client::load_or_new(&session_file_path);
 
     match &args.command {
         cli::Commands::Config(config_args) =>
             match &config_args.command {
                 cli::ConfigCommands::Login => 
                     if client.login(cli::prompt_login_details()) {
-                        client.save(&config_dir.join("session.json"));
+                        client.save(&session_file_path);
                     },
                 cli::ConfigCommands::Template(template_config_args) =>
                     match &template_config_args.command {

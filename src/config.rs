@@ -42,7 +42,7 @@ impl Config {
         Self {
             templates: Vec::new(),
             default: -1,
-            cf_root: std::env::current_dir().unwrap().join("cf")
+            cf_root: std::env::home_dir().unwrap().join("cf")
         }
     }
     pub fn load(path: &PathBuf) -> Result<Self, Box<dyn Error>> {

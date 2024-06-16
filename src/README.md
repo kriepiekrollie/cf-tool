@@ -34,7 +34,7 @@ This file (kinda) contains code relating to configuration.
 
 The functions here actually _do_ the configuring and the reading and writing of files etc.
 
-[serde](https://crates.io/crates/serde_derive) and [serde_json](https://crates.io/crates/serde_json) has been super useful.
+[serde](https://crates.io/crates/serde_derive) and [serde_json](https://crates.io/crates/serde_json) have been super useful.
 
 ## coderunner
 This file (todo) contains code relating to running user code.
