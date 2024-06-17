@@ -1,10 +1,12 @@
 mod cf;
 mod cli;
+mod client;
 mod cmd;
 mod config;
-mod client;
+mod files;
 mod utils;
 use clap::Parser;
+use std::path::PathBuf;
 
 fn main() {
     let args = cli::Cli::parse();
@@ -18,6 +20,7 @@ fn main() {
                 cli::TemplateCommands::Set(template_args) =>
                     cmd::template::set_default(&template_args),
             },
+        // // Maybe i add a "list" command like this?
         // cli::Commands::List(list_command_args) =>
         //     match &list_command_args.command {
         //         cli::ListCommands::Problems(contest_args) =>

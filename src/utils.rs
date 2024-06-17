@@ -35,18 +35,3 @@ pub fn path_shortest_repr(path: &PathBuf) -> String {
     }
     result
 }
-
-pub fn get_problem_details_cwd() -> Option<(String, String)> {
-    match std::env::current_dir() {
-        Ok(current_dir) => {
-            // assume user is in <cf_root>/contest/<contest_id>/<problem_id>
-            let contest_id = current_dir.parent().and_then(|p| p.file_name().map(|s| format!("{:?}", s).to_string()));
-            let problem_id = current_dir.file_name().map(|s| format!("{:?}", s).to_string());
-            match (contest_id, problem_id) {
-                (Some(c), Some(p)) => Some((c, p)),
-                _ => None,
-            }
-        }
-        Err(e) => None
-    }
-}

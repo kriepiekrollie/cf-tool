@@ -1,7 +1,8 @@
+use crate::cf;
 use crate::cli;
 use crate::client;
 use crate::config;
-use crate::cf;
+use crate::files;
 pub mod template;
 
 pub fn test_code() {
@@ -13,11 +14,8 @@ pub fn generate_file(_args: &cli::TemplateArgs) {
 }
 
 pub fn parse(args: &cli::ContestArgs) {
-    let config_dir = dirs::config_dir().unwrap().join("cf-tool");
-    let config_file_path = config_dir.join("config.json");
-    let session_file_path = config_dir.join("session.json");
-    let mut conf = config::Config::load_or_new(&config_file_path).unwrap();
-    let mut clint = client::Client::load_or_new(&session_file_path);
+    let mut conf = config::Config::load_or_new(&files::config_file_path()).unwrap();
+    let mut clint = client::Client::load_or_new(&files::session_file_path());
     // Definitely move some stuff out of this function.
     clint.parse_sample_testcases(&args, &conf.cf_root);
     // clint is doing some heavy lifting
@@ -25,23 +23,17 @@ pub fn parse(args: &cli::ContestArgs) {
 
 pub fn login() {
     // TODO: Check if user is already logged in and then do stuff
-    let config_dir = dirs::config_dir().unwrap().join("cf-tool");
-    let session_file_path = config_dir.join("session.json");
-    let mut clint = client::Client::load_or_new(&session_file_path);
+    let mut clint = client::Client::load_or_new(&files::session_file_path());
     if clint.login(cli::prompt_login_details()) {
-        clint.save(&session_file_path);
+        clint.save(&files::session_file_path());
     }
     // Who is clint?
 }
 
 pub fn submit() {
     let current_dir = std::env::current_dir().unwrap();
-    let config_dir = dirs::config_dir().unwrap().join("cf-tool");
-    let config_file_path = config_dir.join("config.json");
-    let session_file_path = config_dir.join("session.json");
-
-    let mut conf = config::Config::load_or_new(&config_file_path).unwrap();
-    let mut client = client::Client::load_or_new(&session_file_path);
+    let mut conf = config::Config::load_or_new(&files::config_file_path()).unwrap();
+    let mut clint = client::Client::load_or_new(&files::session_file_path());
 
     // Get problem information from current directory.
     // TODO: Perhaps give ability to overwrite this functionality with command-line args?
