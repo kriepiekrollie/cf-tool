@@ -55,7 +55,7 @@ pub fn submit() {
 
             println!("{}", file_name);
             let sussy: Vec<_> = conf.templates
-                .iter()
+                .values()
                 .filter(|x| x.suffix.contains(&file_name))
                 .collect();
 

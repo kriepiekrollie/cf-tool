@@ -6,6 +6,7 @@ use std::fmt::Debug;
 use serde::{Serialize, Deserialize};
 use colored::Colorize;
 use crate::cli::TemplateArgs;
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct LoginDetails {
@@ -15,7 +16,6 @@ pub struct LoginDetails {
 
 #[derive(Default, Clone, Serialize, Deserialize, Debug)]
 pub struct Template {
-    pub alias: String,
     pub lang: usize,
     pub path: PathBuf,
     pub suffix: Vec<String>,
@@ -32,7 +32,7 @@ pub struct TemplateScripts {
 
 #[derive(Serialize, Deserialize)]
 pub struct Config {
-    pub templates: Vec<Template>,
+    pub templates: HashMap<String, Template>,
     pub default: isize,
     pub cf_root: PathBuf,
 }
@@ -40,7 +40,7 @@ pub struct Config {
 impl Config {
     pub fn new() -> Self {
         Self {
-            templates: Vec::new(),
+            templates: HashMap::new(),
             default: -1,
             cf_root: std::env::home_dir().unwrap().join("cf")
         }
@@ -66,33 +66,9 @@ impl Config {
         Ok(())
     }
     pub fn add_template(&mut self, template: Template) {
-        self.templates.push(template);
+        // self.templates.push(template);
     }
-}
-
-fn get_template(config: &Config, args: &TemplateArgs) -> Template {
-    if let Some(alias) = &args.alias {
-        config.templates.iter().find(|t| t.alias == *alias).unwrap().clone()
-    } else if let Some(index) = &args.index {
-        config.templates.get(*index as usize)
-            .unwrap_or_else(|| panic!("Invalid index."))
-            .clone()
-    } else if config.default >= 0 {
-        config.templates.get(config.default as usize).unwrap().clone()
-    } else {
-        // You don't have a template yet...
-        Template::default()
+    pub fn delete_template(&mut self, alias: &String) {
+        // self.templates.retain(|t| t.alias != alias);
     }
-}
-
-pub fn add_template(template: &Template) -> Result<(), Box<dyn Error>> {
-    Ok(())
-}
-
-pub fn delete_template(args: &TemplateArgs) -> Result<(), Box<dyn Error>> {
-    Ok(())
-}
-
-pub fn set_default_template(args: &TemplateArgs) -> Result<(), Box<dyn Error>> {
-    Ok(())
 }

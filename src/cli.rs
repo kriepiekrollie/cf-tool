@@ -89,12 +89,7 @@ impl ContestArgs {
 #[derive(Args)]
 pub struct TemplateArgs {
     /// Specify a template by its alias
-    #[arg(short, long, group = "template_specifier")]
     pub alias: Option<String>,
-
-    /// Specify a template by its index
-    #[arg(short, long, group = "template_specifier")]
-    pub index: Option<usize>,
 }
 
 /*
@@ -169,9 +164,9 @@ fn prompt_until_valid(prompt: &str, invalid_message: &dyn Fn(&String) -> Option<
 }
 
 use colored::Colorize;
-use crate::config::{ Template, TemplateScripts, LoginDetails };
+use crate::config::{ Config, Template, TemplateScripts, LoginDetails };
 
-pub fn prompt_new_template() -> Template {
+pub fn prompt_new_template(conf: &Config) -> Template {
     println!("{}", "Add Template".blue().bold());
     println!("");
 
@@ -223,7 +218,6 @@ pub fn prompt_new_template() -> Template {
     println!("{}", "Failed to add template!".red().bold());
 
     Template {
-        alias: alias,
         lang: lang,
         path: path.into(),
         suffix: Vec::new(),
@@ -235,13 +229,57 @@ pub fn prompt_new_template() -> Template {
     }
 }
 
+use regex::Regex;
+use inquire::validator::{StringValidator, Validation};
+use email_address::EmailAddress;
+
 pub fn prompt_login_details() -> LoginDetails {
-    println!("{}", "Login".blue().bold());
-    let handle_or_email = rprompt::prompt_reply("handle/email: ").unwrap();
-    let password = rpassword::prompt_password("password: ").unwrap();
+    // This is what codeforces.com/register says
+    let handle_re = Regex::new(r"^[\w-]+$").unwrap();
+    let handle_or_email_validator = move |input: &str| 
+        if EmailAddress::is_valid(&input) {
+            Ok(Validation::Valid)
+        } else if input.len() == 0 {
+            Ok(Validation::Invalid("Field should not be empty.".into()))
+        } else if handle_re.is_match(&input) {
+            Ok(Validation::Valid)
+        } else {
+            Ok(Validation::Invalid("Field should contain only Latin letters, digits, underscore or dash characters.".into()))
+        };
+    let password_validator = |input: &str|
+        if input.len() < 5 {
+            Ok(Validation::Invalid("Field should contain at least 5 characters.".into()))
+        } else {
+            Ok(Validation::Valid)
+        };
+
+    let handle_or_email = inquire::Text::new("Handle/Email:")
+        .with_validator(handle_or_email_validator)
+        .prompt().unwrap();
+
+    let password = inquire::Password::new("Password:")
+        .with_validator(password_validator)
+        .with_display_mode(inquire::PasswordDisplayMode::Masked)
+        .without_confirmation()
+        .prompt().unwrap();
+
+    let remember = inquire::Confirm::new("Stay signed in?")
+        .with_default(true)
+        .with_help_message("only for a month")
+        .prompt().unwrap();
+
+    // TODO: Actually use the "remember" variable.
     
     LoginDetails {
         handle: handle_or_email,
         password: password,
     }
+}
+
+pub fn prompt_delete_template(conf: &Config) -> Vec<&String> {
+    let aliases = conf.templates.keys()
+        .collect::<Vec<_>>();
+    let selection: Vec<&String> = inquire::MultiSelect::new("Which templates do you wish to delete?", aliases)
+        .prompt().unwrap();
+    selection
 }
