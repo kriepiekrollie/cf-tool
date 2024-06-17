@@ -12,12 +12,19 @@ fn main() {
         cli::Commands::Template(template_command_args) =>
             match &template_command_args.command {
                 cli::TemplateCommands::Add =>
-                    cmd::template_add(),
+                    cmd::template::add(),
                 cli::TemplateCommands::Delete(template_args) =>
-                    cmd::template_delete(&template_args),
+                    cmd::template::delete(&template_args),
                 cli::TemplateCommands::Set(template_args) =>
-                    cmd::template_set_default(&template_args),
+                    cmd::template::set_default(&template_args),
             },
+        // cli::Commands::List(list_command_args) =>
+        //     match &list_command_args.command {
+        //         cli::ListCommands::Problems(contest_args) =>
+        //             cmd::list::problems(&contest_args),
+        //         cli::ListCommands::Contests =>
+        //             cms::list::contests(),
+        //     }
         cli::Commands::Login =>
             cmd::login(),
         cli::Commands::Parse(contest_args) =>

@@ -76,6 +76,7 @@ pub struct ProblemInfo {
     contest: ContestInfo,
     id: String,
 }
+
 impl ProblemInfo {
     pub fn from_path(path: &PathBuf, root: &PathBuf) -> Option<Self> {
         // Assume "path" is <root>/<contesttype>/<contestid>/<problemid>/
@@ -84,8 +85,8 @@ impl ProblemInfo {
         let contest_id = iter.next()?.to_str()?.to_string();
         let contest_type = iter.next()?.to_str()?;
 
+        // This is such a hacky way of doing it lmao
         let test_path = root.join(&contest_type).join(&contest_id).join(&problem_id);
-
         match is_same_file(&path, &test_path) {
             Ok(true) => 
                 Some (Self {
@@ -118,32 +119,64 @@ pub enum Title {
     LegendaryGrandmaster,
 }
 
+use colored::customcolors::CustomColor;
 impl Title {
-    pub fn from_rating(rating: i16) -> Self {
-        if rating < 0 {
-            Self::Unrated
-        } else if rating < 1000 {
-            Self::Newbie
-        } else if rating < 1200 {
-            Self::Pupil
-        } else if rating < 1400 {
-            Self::Apprentice
-        } else if rating < 1600 {
-            Self::Specialist
-        } else if rating < 1800 {
-            Self::Expert
-        } else if rating < 2000 {
-            Self::CandidateMaster
-        } else if rating < 2200 {
-            Self::Master
-        } else if rating < 2400 {
-            Self::InternationalMaster
-        } else if rating < 2700 {
-            Self::Grandmaster
-        } else if rating < 3000 {
-            Self::InternationalGrandmaster
-        } else {
-            Self::LegendaryGrandmaster
+    pub fn to_customcolor(&self) -> CustomColor {
+        match self {
+            Self::Unrated => 
+                CustomColor { r:   0, g:   0, b:   0 },
+            Self::Newbie =>
+                CustomColor { r:   0, g:   0, b:   0 },
+            Self::Pupil =>
+                CustomColor { r:   0, g:   0, b:   0 },
+            Self::Apprentice =>
+                CustomColor { r:   0, g:   0, b:   0 },
+            Self::Specialist =>
+                CustomColor { r:   0, g:   0, b:   0 },
+            Self::Expert =>
+                CustomColor { r:   0, g:   0, b:   0 },
+            Self::CandidateMaster =>
+                CustomColor { r:   0, g:   0, b:   0 },
+            Self::Master =>
+                CustomColor { r:   0, g:   0, b:   0 },
+            Self::InternationalMaster =>
+                CustomColor { r:   0, g:   0, b:   0 },
+            Self::Grandmaster =>
+                CustomColor { r:   0, g:   0, b:   0 },
+            Self::InternationalGrandmaster =>
+                CustomColor { r:   0, g:   0, b:   0 },
+            Self::LegendaryGrandmaster =>
+                CustomColor { r:   0, g:   0, b:   0 },
+        }
+    }
+
+    pub fn from_rating(rating: Option<u16>) -> Self {
+        match rating {
+            None => Self::Unrated,
+            Some(rating) => 
+                if rating < 1000 {
+                    Self::Newbie
+                } else if rating < 1200 {
+                    Self::Pupil
+                } else if rating < 1400 {
+                    Self::Apprentice
+                } else if rating < 1600 {
+                    Self::Specialist
+                } else if rating < 1800 {
+                    Self::Expert
+                } else if rating < 2000 {
+                    Self::CandidateMaster
+                } else if rating < 2200 {
+                    Self::Master
+                } else if rating < 2400 {
+                    Self::InternationalMaster
+                } else if rating < 2700 {
+                    Self::Grandmaster
+                } else if rating < 3000 {
+                    Self::InternationalGrandmaster
+                } else {
+                    Self::LegendaryGrandmaster
+                }
         }
     }
 }
