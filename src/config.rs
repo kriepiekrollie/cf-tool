@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::fmt::Debug;
 use serde::{Serialize, Deserialize};
 use colored::Colorize;
-use crate::cli::{TemplateArgs, ConfigArgs};
+use crate::cli::TemplateArgs;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct LoginDetails {
@@ -13,7 +13,7 @@ pub struct LoginDetails {
     pub password: String,
 }
 
-#[derive(Default, Clone, Serialize, Deserialize)]
+#[derive(Default, Clone, Serialize, Deserialize, Debug)]
 pub struct Template {
     pub alias: String,
     pub lang: usize,
@@ -23,7 +23,7 @@ pub struct Template {
     pub scripts: TemplateScripts,
 }
 
-#[derive(Default, Clone, Serialize, Deserialize)]
+#[derive(Default, Clone, Serialize, Deserialize, Debug)]
 pub struct TemplateScripts {
     pub before: String,
     pub execute: String,
@@ -60,10 +60,13 @@ impl Config {
             Ok(config)
         }
     }
-    pub fn save(&self, path: &Path) -> Result<(), Box<dyn Error>> {
+    pub fn save(&self, path: &PathBuf) -> Result<(), Box<dyn Error>> {
         let file = File::create(path)?;
         serde_json::to_writer_pretty(file, self)?;
         Ok(())
+    }
+    pub fn add_template(&mut self, template: Template) {
+        self.templates.push(template);
     }
 }
 

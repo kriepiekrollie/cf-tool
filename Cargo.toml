@@ -7,6 +7,7 @@ description = "cf-tool is a command line interface tool for Codeforces"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+ansi-escapes = "0.1.1"
 anyhow = { version = "1.0.86", features = ["backtrace"] }
 clap = { version = "4.5.7", features = ["derive"] }
 colored = "2.1.0"
@@ -19,6 +20,7 @@ reqwest = { version = "0.12.4", features = ["blocking", "cookies"] }
 reqwest_cookie_store = { version = "0.8.0", features = ["serde"] }
 rpassword = "7.3.1"
 rprompt = "2.1.1"
+same-file = "1.0.6"
 scraper = "0.19.0"
 serde = { version = "1.0.203", features = ["derive"] }
 serde_json = "1.0.117"

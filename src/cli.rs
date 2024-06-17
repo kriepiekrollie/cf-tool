@@ -1,4 +1,5 @@
 use clap::{Args, Parser, Subcommand};
+use crate::cf::ContestType;
 
 /*
  * This module declares how the user can interact with the tool.
@@ -30,8 +31,11 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Change configuration
-    Config(ConfigArgs),
+    /// Login
+    Login,
+
+    /// Configure templates
+    Template(TemplateCommandArgs),
 
     /// Fetch samples from contest
     Parse(ContestArgs),
@@ -67,28 +71,13 @@ pub struct ContestArgs {
     pub contest_id: String,
 }
 impl ContestArgs {
-    pub fn get_contest_type(&self) -> ContestType {
+    pub fn contest_type(&self) -> ContestType {
         if self.gym {
             return ContestType::Gym;
         } else if self.contest {
             return ContestType::Contest;
         }
         ContestType::default()
-    }
-}
-
-#[derive(Default,Clone)]
-pub enum ContestType {
-    #[default]
-    Contest,
-    Gym,
-}
-impl std::fmt::Display for ContestType {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match *self {
-            ContestType::Contest => write!(f, "contest"),
-            ContestType::Gym => write!(f, "gym"),
-        }
     }
 }
 
@@ -109,16 +98,10 @@ pub struct TemplateArgs {
 }
 
 /*
- * This module declares how the config subcommand works.
+ * This part declares how the config subcommand works.
  * Unlike xalanq's cftool, I'm mostly using command-line arguments, 
  * but sometimes still stdin and stdout.
  */
-
-#[derive(Args)]
-pub struct ConfigArgs {
-    #[command(subcommand)]
-    pub command: ConfigCommands,
-}
 
 /*
  * For now i'm only implementing the following config options:
@@ -148,32 +131,23 @@ pub struct ConfigArgs {
  * If you want your own directory structure just fork this project lol
  */
 
-#[derive(Subcommand)]
-pub enum ConfigCommands {
-    /// Login
-    Login,
-
-    /// Configure templates
-    Template(TemplateConfigArgs)
-}
-
 /* 
  * Declare commands relating to templates.
  */
 
 #[derive(Args)]
-pub struct TemplateConfigArgs {
+pub struct TemplateCommandArgs {
     #[command(subcommand)]
-    pub command: TemplateConfigCommands,
+    pub command: TemplateCommands,
 }
 
 #[derive(Subcommand)]
-pub enum TemplateConfigCommands {
+pub enum TemplateCommands {
     /// Add a template
     Add,
 
     /// Set a default template
-    SetDefault(TemplateArgs),
+    Set(TemplateArgs),
 
     /// Delete a template
     Delete(TemplateArgs)

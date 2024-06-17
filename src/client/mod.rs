@@ -92,7 +92,6 @@ impl Client {
             .cookie_provider(std::sync::Arc::clone(&session.cookies))
             .build()
             .unwrap();
-
         Self {
             client,
             session,
@@ -104,12 +103,10 @@ impl Client {
             .map(std::io::BufReader::new)
             .unwrap();
         let session: SessionInfo = serde_json::from_reader(reader).unwrap();
-
         let client = reqwest::blocking::Client::builder()
             .cookie_provider(std::sync::Arc::clone(&session.cookies))
             .build()
             .unwrap();
-
         Self {
             client,
             session,
@@ -171,7 +168,6 @@ impl Client {
         return None;
     }
 
-
     pub fn login(&mut self, details: LoginDetails) -> bool {
         // Codeforces login page.
         let url = "https://codeforces.com/enter";
@@ -208,7 +204,7 @@ impl Client {
         let html = scraper::Html::parse_document(&response);
 
         if let Some(handle) = Self::find_handle(&html) {
-            println!("{}", format!("You have succesfully logged in as {}!", handle).green().bold());
+            println!("{}", format!("You have successfully logged in as {}!", handle).green().bold());
             true
         } else {
             println!("{}", "Failed to log in :(".red().bold());
@@ -217,7 +213,7 @@ impl Client {
     }
 
     pub fn parse_sample_testcases(&self, args: &ContestArgs, root_dir: &PathBuf) {
-        let contest_type = args.get_contest_type();
+        let contest_type = args.contest_type();
 
         let url = format!("https://codeforces.com/{}/{}/problems", &contest_type, &args.contest_id);
 
@@ -270,15 +266,19 @@ impl Client {
         println!("{}", format!("Sample testcases have been stored in {:?}", crate::utils::path_shortest_repr(&contest_dir)).green().bold());
     }
 
-    pub fn submit_code(&self, root_dir: &PathBuf) {
-        let diff = pathdiff::diff_paths(std::env::current_dir().unwrap(), &root_dir).unwrap();
-        println!("{:?}", diff);
+    pub fn submit_code(&self, problem_info: crate::cf::ProblemInfo) {
+        // let diff = pathdiff::diff_paths(std::env::current_dir().unwrap(), &root_dir).unwrap();
+        // println!("{:?}", diff);
         // TODO: Handle errors, "you have already submitted this code", actually wait for
-        //
         // submission result, 
         // Contest submit page.
-        println!("{:?}", crate::utils::get_problem_details_cwd());
+        // println!("{:?}", crate::utils::get_problem_details_cwd());
+        // let problem_info = cf::ProblemInfo::from_path(std::env::current_dir().unwrap(), root_dir);
+        
+        // let path = problem_info.get_path();
+        // println!("{:?}", path);
         return;
+
         let url = "https://codeforces.com/contest/1976/submit";
 
         // Get csrf by doing initial response
