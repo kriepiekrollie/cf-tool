@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::fs::File;
+use std::fs;
 use std::io::BufReader;
 use std::fmt::Debug;
 use std::collections::HashMap;
@@ -47,7 +47,7 @@ impl Config {
     }
 
     pub fn load(path: &PathBuf) -> Result<Self> {
-        let file = File::open(path).with_context(||
+        let file = fs::File::open(path).with_context(||
             format!("Failed to open file for reading: {:?}", path))?;
         let reader = BufReader::new(file);
         let config: Self = serde_json::from_reader(reader).with_context(||
@@ -67,7 +67,9 @@ impl Config {
     }
 
     pub fn write(&self, path: &PathBuf) -> Result<()> {
-        let file = File::create(path).with_context(||
+        fs::create_dir_all(&path).with_context(|| 
+            format!("Failed to create config directory: {:?}", path))?;
+        let file = fs::File::create(path).with_context(||
             format!("Failed to open file for writing: {:?}", path))?;
         serde_json::to_writer_pretty(file, self).with_context(||
             format!("Failed to write config to file: {:?}", path))?;

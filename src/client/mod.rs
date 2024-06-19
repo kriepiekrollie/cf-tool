@@ -135,6 +135,8 @@ impl Client {
     }
 
     pub fn write(&self, path: &PathBuf) -> Result<()> {
+        fs::create_dir_all(&path).with_context(|| 
+            format!("Failed to create config directory: {:?}", path))?;
         let writer = fs::File::create(path)
             .map(io::BufWriter::new).with_context(||
             format!("Failed to open file for writing: {:?}", path))?;
