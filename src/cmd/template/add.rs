@@ -71,16 +71,16 @@ pub fn add() -> Result<()> {
     // Filepath message
     println!("{}", "+ Provide a path to your template source.".blue().bold());
     println!("  This path will be used to generate source files. When generating source");
-    println!("  files from your template, the same suffix will be used as the template,");
-    println!("  and cf-tool will replace the these placeholders as follows:");
-    println!("   -  $%U%$   Handle   e.g. kriepiekrollie");
-    println!("   -  $%L%$   Link     e.g. https://codeforces.com/contest/1985/problem/A");
-    println!("   -  $%Y%$   Year     e.g. 2016");
-    println!("   -  $%M%$   Month    e.g. 05");
-    println!("   -  $%D%$   Day      e.g. 28");
-    println!("   -  $%h%$   Hour     e.g. 20");
-    println!("   -  $%m%$   Minute   e.g. 00");
-    println!("   -  $%s%$   Second   e.g. 00");
+    println!("  files from your template, the same suffix will be used as the template.");
+    // println!("  cf-tool will replace the these placeholders as follows:");
+    // println!("   -  $%U%$   Handle   e.g. kriepiekrollie");
+    // println!("   -  $%L%$   Link     e.g. https://codeforces.com/contest/1985/problem/A");
+    // println!("   -  $%Y%$   Year     e.g. 2016");
+    // println!("   -  $%M%$   Month    e.g. 05");
+    // println!("   -  $%D%$   Day      e.g. 28");
+    // println!("   -  $%h%$   Hour     e.g. 20");
+    // println!("   -  $%m%$   Minute   e.g. 00");
+    // println!("   -  $%s%$   Second   e.g. 00");
     println!("");
 
     // Filepath input
@@ -111,22 +111,30 @@ pub fn add() -> Result<()> {
     println!("   3. after_script    (executed once)");
     println!("");
     println!("  \"execute_script\" assumes that your code uses standard input/output.");
-    println!("  You may use the following placeholders in your scripts:");
-    println!("   -  $%path%$  Current directory.            e.g. /home/user/cf/gym/123/a");
-    println!("   -  $%file%$  Source filename.              e.g. a.cpp");
-    println!("   -  $%name%$  Source filename, no suffix.   e.g. a");
-    println!("   -  $%time%$  Time in seconds since epoch.  e.g. 1464465600");
-    println!("");
+    // println!("  You may use the following placeholders in your scripts:");
+    // println!("   -  $%path%$  Current directory.            e.g. /home/user/cf/gym/123/a");
+    // println!("   -  $%file%$  Source filename.              e.g. a.cpp");
+    // println!("   -  $%name%$  Source filename, no suffix.   e.g. a");
+    // println!("   -  $%time%$  Time in seconds since epoch.  e.g. 1464465600");
+    println!("  You may use the following environment variables in your scripts:");
+    println!("   -  FILE  Source filename.              e.g. a.cpp     ");
+    println!("   -  NAME  Source filename, no suffix.   e.g. a         ");
+    println!("   -  TIME  Time in seconds since epoch.  e.g. 1464465600");
 
     let before_script = inquire::Text::new("before_script:")
-        .with_help_message(" Examples: \"g++ $%file%$ -o $%name%$ -DLOCAL\", \"\" ")
+        // .with_help_message(" Examples: \"g++ $%file%$ -o $%name%$ -DLOCAL\", \"\" ")
+        .with_help_message(" Examples: \"g++ $FILE -o $NAME -DLOCAL\", \"\" ")
         .prompt().with_context(|| "Failed to get input from user.")?;
     let before_script = if before_script.chars().any(|c| c != ' ') { Some(before_script) } else { None };
+
     let execute_script = inquire::Text::new("execute_script:")
-        .with_help_message(" Examples: \"./$%name%$\", \"python3 $%file%$\" ")
+        // .with_help_message(" Examples: \"./$%name%$\", \"python3 $%file%$\" ")
+        .with_help_message(" Examples: \"./$NAME\", \"python3 $FILE\" ")
         .prompt().with_context(|| "Failed to get input from user.")?;
+
     let after_script = inquire::Text::new("after_script:")
-        .with_help_message(" Examples: \"rm $%name%$\", \"\"")
+        // .with_help_message(" Examples: \"rm $%name%$\", \"\"")
+        .with_help_message(" Examples: \"rm $NAME\", \"\"")
         .prompt().with_context(|| "Failed to get input from user.")?;
     let after_script = if after_script.chars().any(|c| c != ' ') { Some(after_script) } else { None };
 

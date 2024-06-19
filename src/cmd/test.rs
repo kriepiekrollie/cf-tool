@@ -1,5 +1,4 @@
-use crate::config;
-use crate::files;
+use crate::{config, files};
 use std::{env, fs, time};
 use std::io::{BufRead, BufReader};
 use std::time::{Duration, SystemTime};

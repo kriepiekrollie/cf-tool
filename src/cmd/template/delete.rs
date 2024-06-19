@@ -47,6 +47,12 @@ pub fn delete(args: cli::TemplateArgs) -> Result<()> {
         conf.templates.remove(&alias);
     }
 
+    if let Some(default) = &conf.default.clone() {
+        if !conf.templates.contains_key(default) {
+            conf.default = None;
+        }
+    }
+
     conf.write(&files::config_file_path())
         .with_context(|| "Failed to save config to file.")?;
 
