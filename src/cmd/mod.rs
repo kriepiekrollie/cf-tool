@@ -124,6 +124,6 @@ pub fn submit() -> Result<()> {
 pub fn source() -> Result<()> {
     let url = "https://www.github.com/kriepiekrollie/cf-tool";
     open::that(url)
-        .with_context(|| format!("Failed to open link in browser: {}, url"))?;
+        .with_context(|| format!("Failed to open link in browser: {}", url))?;
     Ok(())
 }
