@@ -2,6 +2,7 @@ use crate::cli;
 use crate::config;
 use crate::files;
 use crate::cf;
+use crate::utils;
 use std::path::Path;
 use itertools::Itertools;
 use regex::Regex;
@@ -13,7 +14,7 @@ use anyhow::{Context, Result};
 pub fn add() -> Result<()> {
 
     let mut conf = config::Config::load_or_new(&files::config_file_path())
-        .with_context(|| "Failed to load config from file.")?;
+        .with_context(|| "Failed to load config.")?;
 
     // Header
     println!("{}", "- Create a new template -".blue().bold());
@@ -121,13 +122,15 @@ pub fn add() -> Result<()> {
 
     let before_script = inquire::Text::new("before_script:")
         .with_help_message(" Examples: \"g++ $%file%$ -o $%name%$ -DLOCAL\", \"\" ")
-        .prompt_skippable().with_context(|| "Failed to get input from user.")?;
+        .prompt().with_context(|| "Failed to get input from user.")?;
+    let before_script = if before_script.chars().any(|c| c != ' ') { Some(before_script) } else { None };
     let execute_script = inquire::Text::new("execute_script:")
         .with_help_message(" Examples: \"./$%name%$\", \"python3 $%file%$\" ")
         .prompt().with_context(|| "Failed to get input from user.")?;
     let after_script = inquire::Text::new("after_script:")
         .with_help_message(" Examples: \"rm $%name%$\", \"\"")
-        .prompt_skippable().with_context(|| "Failed to get input from user.")?;
+        .prompt().with_context(|| "Failed to get input from user.")?;
+    let after_script = if after_script.chars().any(|c| c != ' ') { Some(after_script) } else { None };
 
     let make_new_default = match conf.default {
         None => true,
@@ -167,7 +170,7 @@ pub fn add() -> Result<()> {
 pub fn delete(args: cli::TemplateArgs) -> Result<()> {
 
     let mut conf = config::Config::load_or_new(&files::config_file_path())
-        .with_context(|| "Failed to load config from file.")?;
+        .with_context(|| "Failed to load config.")?;
 
     if conf.templates.len() == 0 {
         println!("{}", "You don't have any templates yet!".red().bold());
@@ -216,7 +219,7 @@ pub fn delete(args: cli::TemplateArgs) -> Result<()> {
 pub fn set_default(args: cli::TemplateArgs) -> Result<()> {
 
     let mut conf = config::Config::load_or_new(&files::config_file_path())
-        .with_context(|| "Failed to load config from file.")?;
+        .with_context(|| "Failed to load config.")?;
 
     if conf.templates.len() == 0 {
         println!("{}", "You don't have any templates yet!".red().bold());
