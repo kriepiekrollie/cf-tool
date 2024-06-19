@@ -33,11 +33,11 @@ fn main() -> Result<()> {
         cli::Commands::Parse(contest_args) =>
             cmd::parse(contest_args),
         cli::Commands::Gen(template_args) =>
-            cmd::generate_file(template_args),
+            cmd::gen(template_args),
         cli::Commands::Submit =>
             cmd::submit(),
         cli::Commands::Test =>
-            cmd::test_code(),
+            cmd::test(),
         cli::Commands::Source =>
             cmd::source(),
     }

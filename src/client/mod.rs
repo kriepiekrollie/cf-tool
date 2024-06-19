@@ -1,57 +1,24 @@
+mod serde_cookies;
+mod postbody;
+mod scrape;
+
 use crate::config::LoginDetails;
 use crate::cli::ContestArgs;
 use crate::utils;
+use postbody::PostBody;
 
 use rand::prelude::*;
 use std::path::PathBuf;
 use std::io::Write;
 use std::{io, fs};
+use std::collections::HashMap;
 
+use std::sync::Arc;
 use serde::{Serialize, Deserialize};
 use reqwest_cookie_store::{CookieStore, CookieStoreMutex};
-use std::sync::Arc;
-mod serde_cookies;
 
 use colored::Colorize;
-use anyhow::{Context, Result};
-
-// An enum to store the body of a post request.
-// To be used with serde_qs.
-#[derive(Serialize, Deserialize)]
-#[serde(tag = "action")]
-enum PostBody {
-    #[serde(rename = "enter")]
-    Login {
-        csrf_token: String,
-        ftaa: String,
-        bfaa: String,
-        #[serde(rename = "_tta")]
-        tta: String,
-        #[serde(rename = "handleOrEmail")]
-        handle_or_email: String,
-        password: String,
-        remember: String,
-    },
-    #[serde(rename = "submitSolutionFormSubmitted")]
-    Submit {
-        csrf_token: String,
-        ftaa: String,
-        bfaa: String,
-        #[serde(rename = "_tta")]
-        tta: String,
-        #[serde(rename = "contestId")]
-        contest_id: String,
-        #[serde(rename = "submittedProblemIndex")]
-        problem_index: String,
-        #[serde(rename = "programTypeId")]
-        language_id: String,
-        source: String,
-        #[serde(rename = "tabSize")]
-        tab_size: u8,
-        #[serde(rename = "sourceFile")]
-        source_file: String,
-    },
-}
+use anyhow::{Context, Result, bail};
 
 // This is what gets stored in .config/cf-tool/session.json
 // To be used with serde_json..
@@ -147,17 +114,6 @@ impl Client {
         Ok(())
     }
 
-    fn find_csrf(html: &scraper::Html) -> Option<String> {
-        // Technically there should only be one csrf token but i'm doing this to be safe lol
-        let csrf_selector = scraper::Selector::parse("span.csrf-token").unwrap();
-        let csrf_tokens = html.select(&csrf_selector);
-        for csrf_token in csrf_tokens {
-            if let Some(s) = csrf_token.value().attr("data-csrf") {
-                return Some(s.to_string());
-            }
-        }
-        None
-    }
 
     fn get_csrf(&self, url: &str) -> Result<String> {
         // Make a get request to the url and find the CSRF token 
@@ -166,24 +122,9 @@ impl Client {
             .with_context(|| format!("Failed to get response from {}", url))?;
 
         let html = scraper::Html::parse_document(&response);
-        let csrf = Self::find_csrf(&html)
+        let csrf = scrape::csrf(&html)
             .with_context(|| "Failed to get CSRF from HTML")?;
         Ok(csrf)
-    }
-
-    fn find_handle(html: &scraper::Html) -> Option<String> {
-        let lang_chooser_selector = scraper::Selector::parse("div.lang-chooser").unwrap();
-        let a_selector = scraper::Selector::parse("a").unwrap();
-        for lang_choose in html.select(&lang_chooser_selector) {
-            for a in lang_choose.select(&a_selector) {
-                if let Some(href) = a.value().attr("href") {
-                    if href.starts_with("/profile/") {
-                        return Some(href.to_string().replace("/profile/", ""));
-                    }
-                }
-            }
-        }
-        None
     }
 
     pub fn login(&mut self, details: LoginDetails) -> Result<bool> {
@@ -219,7 +160,7 @@ impl Client {
 
         let html = scraper::Html::parse_document(&response);
 
-        if let Some(handle) = Self::find_handle(&html) {
+        if let Some(handle) = scrape::handle(&html) {
             println!("{}", format!("You have successfully logged in as {}!", 
                     handle).green().bold());
             Ok(true)
@@ -229,12 +170,14 @@ impl Client {
         }
     }
 
-    pub fn parse_sample_testcases(&self, args: &ContestArgs, root_dir: &PathBuf) -> Result<()> {
+    pub fn parse_sample_testcases(&self, args: &ContestArgs) -> Result<HashMap<String, Vec<(String, String)>>> {
+        // TODO: Make the arguments to this some nicer type?
         let contest_type = args.contest_type();
 
         let url = format!("https://codeforces.com/{}/{}/problems", 
             &contest_type, &args.contest_id);
 
+        // I don't feel like this print statement belongs here...
         println!("{}", format!("Parsing {} {} from {}", &contest_type, 
                 &args.contest_id, &url.underline()).blue().bold());
         
@@ -245,75 +188,11 @@ impl Client {
 
         // First, check that what we got is even the correct thing.
         if response.contains("Codeforces.showMessage(\"No such contest\");") {
-            println!("{}", "No such contest.".red().bold());
-            return Ok(());
+            bail!("{}", "No such contest.".red().bold());
         }
 
         let html = scraper::Html::parse_document(&response);
-
-        // TODO: maybe check if we can find a span.countdown (start a race)
-
-        // I'm pretty sure these won't fail.
-        let pdiv_selector = scraper::Selector::parse("div.problemindexholder").unwrap();
-        let indiv_selector = scraper::Selector::parse("div.input").unwrap();
-        let outdiv_selector = scraper::Selector::parse("div.output").unwrap();
-        let pre_selector = scraper::Selector::parse("pre").unwrap();
-
-        let contest_dir = root_dir.join(format!("{}", &contest_type))
-            .join(&args.contest_id);
-
-        for problemdiv in html.select(&pdiv_selector) {
-            let problem_index = problemdiv.value().attr("problemindex")
-                .with_context(|| "Failed to parse samples from HTML")?;
-
-            let problem_dir = contest_dir.join(&problem_index.to_lowercase());
-            fs::create_dir_all(&problem_dir).with_context(|| 
-                format!("Failed to create directory: {:?}", problem_dir))?;
-
-            let mut count: u8 = 0;
-            for (idx, indiv) in problemdiv.select(&indiv_selector).enumerate() {
-                let path = problem_dir.join(format!("{}.in", idx));
-                let pre = indiv.select(&pre_selector).next().with_context(||
-                    "Failed to parse samples from HTML.")?;
-
-                let data = pre.text()
-                    .map(|s| s.to_string())
-                    .collect::<Vec<String>>()
-                    .join("\n");
-
-                let mut writer = fs::File::create(&path)
-                    .map(io::BufWriter::new).with_context(||
-                    format!("Failed to open file for writing: {:?}", path))?;
-
-                writer.write(data.as_bytes()).with_context(|| 
-                    format!("Failed to write to file: {:?}", path))?;
-                count += 1;
-            }
-
-            for (idx, outdiv) in problemdiv.select(&outdiv_selector).enumerate() {
-                let path = problem_dir.join(format!("{}.out", idx));
-                let pre = outdiv.select(&pre_selector).next().with_context(||
-                    "Failed to parse samples from HTML.")?;
-
-                let data = pre.text()
-                    .map(|s| s.to_string())
-                    .collect::<Vec<String>>()
-                    .join("\n");
-
-                let mut writer = fs::File::create(&path)
-                    .map(io::BufWriter::new).with_context(||
-                    format!("Failed to open file for writing: {:?}", path))?;
-
-                writer.write(data.as_bytes()).with_context(|| 
-                    format!("Failed to write to file: {:?}", path))?;
-            }
-
-            println!("Problem {}: parsed {} sample testcase{}.", 
-                problem_index, count, if count == 1 { "" } else { "s" });
-        }
-
-        println!("{}", format!("Sample testcases have been stored in {:?}", utils::path_shortest_repr(&contest_dir)).green().bold());
-        Ok(())
+        scrape::sample_tests(&html)
     }
 
     // pub fn submit_code(&self, problem_info: cf::ProblemInfo) -> Result<()> {
@@ -374,7 +253,7 @@ impl Client {
         }
 
         // Try to find the handle.
-        let handle = Self::find_handle(&html);
+        let handle = scrape::handle(&html);
 
         if let Some(handle) = &handle {
             println!("{}", format!("You are indeed logged in as {}!", handle)
