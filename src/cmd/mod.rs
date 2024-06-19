@@ -8,7 +8,7 @@ use email_address::EmailAddress;
 use regex::Regex;
 use inquire::validator::Validation;
 use crate::config::LoginDetails;
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 pub fn test_code() -> Result<()> {
     println!("Testing code.");
@@ -21,7 +21,7 @@ pub fn generate_file(_args: cli::TemplateArgs) -> Result<()> {
 }
 
 pub fn parse(args: cli::ContestArgs) -> Result<()> {
-    let conf = config::Config::load_or_new(&files::config_file_path()).unwrap();
+    let conf = config::Config::load_or_new(&files::config_file_path())?;
     let clint = client::Client::load_or_new(&files::session_file_path())?;
     // Definitely move some stuff out of this function.
     clint.parse_sample_testcases(&args, &conf.cf_root)?;
@@ -52,7 +52,7 @@ pub fn login() -> Result<()> {
         };
     let handle_or_email = inquire::Text::new("Handle/Email:")
         .with_validator(handle_or_email_validator)
-        .prompt().unwrap();
+        .prompt().with_context(|| "Failed to get input from user.")?;
 
     let password_validator = |input: &str|
         if input.len() < 5 {
@@ -64,12 +64,12 @@ pub fn login() -> Result<()> {
         .with_validator(password_validator)
         .with_display_mode(inquire::PasswordDisplayMode::Masked)
         .without_confirmation()
-        .prompt().unwrap();
+        .prompt().with_context(|| "Failed to get input from user.")?;
 
     let remember = inquire::Confirm::new("Remember me?")
         .with_default(true)
         .with_help_message(" only for a month... ")
-        .prompt().unwrap();
+        .prompt().with_context(|| "Failed to get input from user.")?;
 
     if clint.login(LoginDetails{handle_or_email, password, remember})? {
         clint.write(&files::session_file_path())?;
@@ -124,8 +124,6 @@ pub fn submit() -> Result<()> {
 pub fn source() -> Result<()> {
     let url = "https://www.github.com/kriepiekrollie/cf-tool";
     open::that(url)
-        .unwrap_or_else(|_| {
-            println!("Failed to open link in browser: {}", url)
-        });
+        .with_context(|| format!("Failed to open link in browser: {}, url"))?;
     Ok(())
 }
