@@ -122,7 +122,7 @@ pub fn submit() -> Result<()> {
 }
 
 pub fn source() -> Result<()> {
-    let url = "https://www.github.com/";
+    let url = "https://www.github.com/kriepiekrollie/cf-tool";
     open::that(url)
         .unwrap_or_else(|_| {
             println!("Failed to open link in browser: {}", url)
