@@ -1,3 +1,4 @@
+pub mod languages;
 use std::path::PathBuf;
 use same_file::is_same_file;
 
@@ -15,6 +16,8 @@ impl std::fmt::Display for ContestType {
         }
     }
 }
+
+#[allow(dead_code)]
 impl ContestType {
     pub fn from_path(path: &PathBuf, root: &PathBuf) -> Option<Self> {
         // Assume "path" is <root>/<contesttype>/<contestid>/
@@ -43,11 +46,14 @@ impl ContestType {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct ContestInfo {
     typ: ContestType,
     id: String,
 }
+
+#[allow(dead_code)]
 impl ContestInfo {
     pub fn from_path(path: &PathBuf, root: &PathBuf) -> Option<Self> {
         // Assume "path" is <root>/<contesttype>/<contestid>/
@@ -71,12 +77,14 @@ impl ContestInfo {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct ProblemInfo {
     contest: ContestInfo,
     id: String,
 }
 
+#[allow(dead_code)]
 impl ProblemInfo {
     pub fn from_path(path: &PathBuf, root: &PathBuf) -> Option<Self> {
         // Assume "path" is <root>/<contesttype>/<contestid>/<problemid>/
@@ -104,6 +112,7 @@ impl ProblemInfo {
     }
 }
 
+#[allow(dead_code)]
 pub enum Title {
     Unrated,
     Newbie,
@@ -120,6 +129,7 @@ pub enum Title {
 }
 
 use colored::customcolors::CustomColor;
+#[allow(dead_code)]
 impl Title {
     pub fn to_customcolor(&self) -> CustomColor {
         match self {
@@ -181,6 +191,7 @@ impl Title {
     }
 }
 
+#[allow(dead_code)]
 pub struct UserInfo {
     handle: String,
     rating: Option<u16>,

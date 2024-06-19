@@ -6,19 +6,19 @@ mod config;
 mod files;
 mod utils;
 use clap::Parser;
-use std::path::PathBuf;
+use anyhow::Result;
 
-fn main() {
+fn main() -> Result<()> {
     let args = cli::Cli::parse();
-    match &args.command {
+    match args.command {
         cli::Commands::Template(template_command_args) =>
-            match &template_command_args.command {
+            match template_command_args.command {
                 cli::TemplateCommands::Add =>
                     cmd::template::add(),
                 cli::TemplateCommands::Delete(template_args) =>
-                    cmd::template::delete(&template_args),
+                    cmd::template::delete(template_args),
                 cli::TemplateCommands::Set(template_args) =>
-                    cmd::template::set_default(&template_args),
+                    cmd::template::set_default(template_args),
             },
         // // Maybe i add a "list" command like this?
         // cli::Commands::List(list_command_args) =>
@@ -31,9 +31,9 @@ fn main() {
         cli::Commands::Login =>
             cmd::login(),
         cli::Commands::Parse(contest_args) =>
-            cmd::parse(&contest_args),
+            cmd::parse(contest_args),
         cli::Commands::Gen(template_args) =>
-            cmd::generate_file(&template_args),
+            cmd::generate_file(template_args),
         cli::Commands::Submit =>
             cmd::submit(),
         cli::Commands::Test =>
@@ -95,4 +95,3 @@ fn main() {
 //     println!("   Memory: {}", "5.2 MB");
 //     print!("{}", ansi_escapes::CursorShow);
 // }
-
