@@ -67,8 +67,10 @@ impl Config {
     }
 
     pub fn write(&self, path: &PathBuf) -> Result<()> {
-        fs::create_dir_all(&path).with_context(|| 
-            format!("Failed to create config directory: {:?}", path))?;
+        if let Some(par) = path.parent() {
+            fs::create_dir_all(&par).with_context(|| 
+                format!("Failed to create config directory: {:?}", path))?;
+        }
         let file = fs::File::create(path).with_context(||
             format!("Failed to open file for writing: {:?}", path))?;
         serde_json::to_writer_pretty(file, self).with_context(||
