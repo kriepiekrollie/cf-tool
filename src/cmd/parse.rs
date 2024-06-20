@@ -47,5 +47,7 @@ pub fn parse(args: cli::ContestArgs) -> Result<()> {
 
     println!("{}", format!("Sample testcases have been stored in {:?}", 
             utils::path_shortest_repr(&contest_dir)).green().bold());
+
+    // TODO: IDEA!!! what if we run a user-defined script here?
     Ok(())
 }

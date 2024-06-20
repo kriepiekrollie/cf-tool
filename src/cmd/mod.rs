@@ -16,6 +16,8 @@ pub use {
     login::login,
 };
 
+// TODO: Add a command to allow configuration of the <cf_root> folder.
+
 pub fn source() -> Result<()> {
     let url = "https://www.github.com/kriepiekrollie/cf-tool";
     open::that(url)
