@@ -37,7 +37,7 @@ pub fn gen(args: cli::TemplateArgs) -> Result<()> {
     let template = conf.templates.get(&alias).unwrap_or_else(|| {
         println!("{}", format!("There are no templates with the name {}.", 
             alias.underline()).red().bold());
-        std::process::exit(0);
+        std::process::exit(1);
     });
 
     let current_dir = env::current_dir()

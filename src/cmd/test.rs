@@ -56,14 +56,14 @@ pub fn test() -> Result<()> {
 
     if source_files.len() == 0 {
         println!("{}", "Couldn't find any source files in this directory.".red().bold());
-        std::process::exit(0);
+        std::process::exit(1);
     }
     if sample_tests.len() == 0 {
         println!("{}", "Couldn't find any sample testcases in this directory.".red().bold());
         if unhappiness {
             println!("(There were some files without partners?)");
         }
-        std::process::exit(0);
+        std::process::exit(1);
     }
 
     let source_file = if source_files.len() > 1 {
@@ -146,7 +146,7 @@ pub fn test() -> Result<()> {
         if code != 0 {
             println!("{}", "Exited with non-zero exit code:".red().bold());
             println!("{}", error);
-            std::process::exit(0);
+            std::process::exit(1);
         }
         println!("{}", "Successfully ran before-script.".green().bold());
     }
@@ -178,6 +178,25 @@ pub fn test() -> Result<()> {
 
     for result in children {
         display_test_result(result)?;
+    }
+
+    if let Some(after_script) = &template.scripts.after {
+        println!("");
+        println!("after-script: {:?}", after_script);
+        let (code, output, error) = run_script::run(
+            &after_script,
+            &args,
+            &options,
+        ).with_context(|| "Failed to run script.")?;
+        if output.chars().any(|c| c != ' ') {
+            println!("Output: {}", output);
+        }
+        if code != 0 {
+            println!("{}", "Exited with non-zero exit code:".red().bold());
+            println!("{}", error);
+            std::process::exit(1);
+        }
+        println!("{}", "Successfully ran after-script.".green().bold());
     }
 
     println!("");

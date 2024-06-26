@@ -49,8 +49,8 @@ impl ContestType {
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct ContestInfo {
-    typ: ContestType,
-    id: String,
+    pub typ: ContestType,
+    pub id: String,
 }
 
 #[allow(dead_code)]
@@ -80,8 +80,8 @@ impl ContestInfo {
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct ProblemInfo {
-    contest: ContestInfo,
-    id: String,
+    pub contest: ContestInfo,
+    pub id: String,
 }
 
 #[allow(dead_code)]
@@ -195,4 +195,16 @@ impl Title {
 pub struct UserInfo {
     handle: String,
     rating: Option<u16>,
+}
+
+#[derive(Debug)]
+pub struct SubmissionInfo {
+    pub id: String,
+    pub when: String,
+    pub who: String,
+    pub problem: String,
+    pub lang: String,
+    pub verdict: String,
+    pub time: String,
+    pub memory: String,
 }

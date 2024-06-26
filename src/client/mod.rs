@@ -1,19 +1,29 @@
 mod serde_cookies;
-mod postbody;
 mod scrape;
 
-use crate::config::LoginDetails;
-use crate::cli::ContestArgs;
-use crate::utils;
+mod postbody;
 use postbody::PostBody;
 
-use rand::prelude::*;
-use std::path::PathBuf;
-use std::io::Write;
-use std::{io, fs};
-use std::collections::HashMap;
+use crate::{
+    config::LoginDetails,
+    cli::ContestArgs,
+    cf::{
+        ProblemInfo,
+        ContestInfo,
+        SubmissionInfo,
+    },
+};
 
-use std::sync::Arc;
+use rand::prelude::*;
+use std::{
+    fs,
+    io,
+    path::PathBuf,
+    collections::HashMap,
+    sync::Arc,
+    process,
+};
+
 use serde::{Serialize, Deserialize};
 use reqwest_cookie_store::{CookieStore, CookieStoreMutex};
 
@@ -115,18 +125,6 @@ impl Client {
     }
 
 
-    fn get_csrf(&self, url: &str) -> Result<String> {
-        // Make a get request to the url and find the CSRF token 
-        let response = self.client.get(url).send()
-            .with_context(|| format!("Failed to make request to {}", url))?.text()
-            .with_context(|| format!("Failed to get response from {}", url))?;
-
-        let html = scraper::Html::parse_document(&response);
-        let csrf = scrape::csrf(&html)
-            .with_context(|| "Failed to get CSRF from HTML")?;
-        Ok(csrf)
-    }
-
     pub fn login(&mut self, details: LoginDetails) -> Result<bool> {
         // Codeforces login page.
         let url = "https://codeforces.com/enter";
@@ -134,7 +132,13 @@ impl Client {
         *self = Client::new()?;
 
         // Get csrf by doing initial response
-        let csrf_token = self.get_csrf(url)?;
+        let response = self.client.get(url).send()
+            .with_context(|| format!("Failed to make request to {}", url))?.text()
+            .with_context(|| format!("Failed to get response from {}", url))?;
+
+        let html = scraper::Html::parse_document(&response);
+        let csrf_token = scrape::csrf(&html)
+            .with_context(|| "Failed to get CSRF from HTML")?;
 
         let post_body = serde_qs::to_string(&PostBody::Login {
             csrf_token,
@@ -195,46 +199,82 @@ impl Client {
         scrape::sample_tests(&html)
     }
 
-    // pub fn submit_code(&self, problem_info: cf::ProblemInfo) -> Result<()> {
-    //     // let diff = pathdiff::diff_paths(std::env::current_dir().unwrap(), &root_dir).unwrap();
-    //     // println!("{:?}", diff);
-    //     // TODO: Handle errors, "you have already submitted this code", actually wait for
-    //     // submission result, 
-    //     // Contest submit page.
-    //     // println!("{:?}", utils::get_problem_details_cwd());
-    //     // let problem_info = cf::ProblemInfo::from_path(std::env::current_dir().unwrap(), root_dir);
-    //     
-    //     // let path = problem_info.get_path();
-    //     // println!("{:?}", path);
-    //     // return Ok(());
+    pub fn submit_code(&self, problem_info: &ProblemInfo, source: &String, language_id: &u8) -> Result<SubmissionInfo> {
 
-    //     let url = "https://codeforces.com/contest/1976/submit";
+        let url = format!("https://codeforces.com/{}/{}/submit", 
+            problem_info.contest.typ, problem_info.contest.id);
 
-    //     // Get csrf by doing initial response
-    //     let csrf_token = self.get_csrf(url)?;
+        // println!("{}", url);
 
-    //     let post_body = serde_qs::to_string(&PostBody::Submit {
-    //         csrf_token,
-    //         ftaa: self.session.ftaa.clone(),
-    //         bfaa: self.session.bfaa.clone(),
-    //         tta: self.session.tta.clone(),
-    //         contest_id: String::from("1976"),
-    //         problem_index: String::from("A"),
-    //         language_id: String::from("70"),
-    //         source: String::from("print('testing')"),
-    //         tab_size: 4,
-    //         source_file: String::from(""),
-    //     }).with_context(|| "Failed to create query string for post request.")?;
+        // Get csrf by doing initial response
+        let response = self.client.get(&url).send()
+            .with_context(|| format!("Failed to make request to {}", url))?.text()
+            .with_context(|| format!("Failed to get response from {}", url))?;
 
-    //     // Make a POST request to the url, which redirects us to the home page.
-    //     let response = self.client.post(url)
-    //         .header("Content-Type", "application/x-www-form-urlencoded")
-    //         .body(post_body).send()
-    //         .with_context(|| format!("Failed to make request to {}", url))?.text()
-    //         .with_context(|| format!("Failed to get response from {}", url))?;
+        let html = scraper::Html::parse_document(&response);
+        let csrf_token = scrape::csrf(&html)
+            .with_context(|| "Failed to get CSRF from HTML")?;
 
-    //     Ok(())
-    // }
+        // First, check that what we got is even the correct thing.
+        if response.contains("Codeforces.showMessage(\"No such contest\");") {
+            bail!("{}", "No such contest.".red().bold());
+        }
+
+        let handle = scrape::handle(&html)
+            .with_context(|| "Login failed. Try logging in with cf login".red().bold())?;
+        println!("{}", format!("Submitting with account: {}", handle).cyan().bold());
+
+        let problem_index = scrape::problem_index(&html, &problem_info.id)
+            .with_context(|| "Failed to get problem index. Does this problem exist?")?;
+
+        let post_body = serde_qs::to_string(&PostBody::Submit {
+            csrf_token,
+            ftaa: self.session.ftaa.clone(),
+            bfaa: self.session.bfaa.clone(),
+            tta: self.session.tta.clone(),
+            contest_id: problem_info.contest.id.clone(),
+            problem_index,
+            language_id: *language_id,
+            source: source.to_string(),
+            tab_size: 4,
+            source_file: String::from(""),
+        }).with_context(|| "Failed to create query string for post request.")?;
+        
+        // println!("{:?}", post_body);
+
+        // Make a POST request to the url, which redirects us to the home page.
+        let response = self.client.post(&url)
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(post_body).send()
+            .with_context(|| format!("Failed to make request to {}", url))?.text()
+            .with_context(|| format!("Failed to get response from {}", url))?;
+
+        if response.contains("You have submitted exactly the same code before") {
+            println!("{}", "You have submitted exactly the same code before".red().bold());
+            process::exit(1);
+        }
+
+        let html = scraper::Html::parse_document(&response);
+        // println!("{:?}", response);
+
+        Ok(scrape::latest_submission_info(&html)
+            .with_context(|| "Failed to get submission information.")?)
+    }
+
+    pub fn get_submission(&self, contest_info: &ContestInfo, submission_id: &String) -> Result<SubmissionInfo> {
+        let url = format!("https://codeforces.com/{}/{}/my", contest_info.typ, contest_info.id);
+
+        let response = self.client.get(&url)
+            .send()
+            .with_context(|| format!("Failed to make request to {}", url))?
+            .text()
+            .with_context(|| format!("Failed to get response from {}", url))?;
+
+        let html = scraper::Html::parse_document(&response);
+
+        Ok(scrape::submission_info(&html, &submission_id)
+            .with_context(|| "Failed to get submission info.")?)
+    }
 
     #[allow(dead_code)]
     fn debug_test_logged_in(&self) -> Result<bool> {

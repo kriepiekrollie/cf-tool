@@ -22,7 +22,7 @@ pub fn delete(args: cli::TemplateArgs) -> Result<()> {
                 println!("{}", format!(
                     "There are no templates with the name {}.", alias
                     .underline()).red().bold());
-                std::process::exit(0); // Vec::new()
+                std::process::exit(1); // Vec::new()
             }
             vec![alias]
         },

@@ -1,5 +1,6 @@
-use scraper::{Html, Selector};
-use anyhow::{Context, Result};
+use crate::cf::SubmissionInfo;
+use scraper::{Html, Selector, ElementRef};
+use anyhow::{Context, Result, anyhow, bail};
 use itertools::Itertools;
 use std::collections::HashMap;
 
@@ -65,4 +66,88 @@ pub fn sample_tests(html: &Html) -> Result<HashMap<String, Vec<(String, String)>
     }
 
     Ok(result)
+}
+
+/// Find the problem index from the list of options in the select.
+/// Basically a check to see if the problem actually exists.
+pub fn problem_index(html: &Html, problem_id: &str) -> Option<String> {
+    let pselect_selector = Selector::parse("select[name=\"submittedProblemIndex\"]").unwrap();
+    let option_selector = Selector::parse("option").unwrap();
+    for select in html.select(&pselect_selector) {
+        for option in select.select(&option_selector) {
+            if let Some(value) = option.value().attr("value") {
+                if value.to_lowercase() == problem_id.to_lowercase() {
+                    return Some(value.to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
+fn parse_submission_tr(row: &ElementRef<'_>) -> Result<SubmissionInfo> {
+    let td_selector = Selector::parse("td").unwrap();
+    let mut iter = row.select(&td_selector);
+    let id = iter.next().with_context(|| "Couldn't find submission ID.")?
+        .text().map(|s| s.to_string()).collect::<String>().trim().to_string();
+    let when = iter.next().with_context(|| "Couldn't find submission time.")?
+        .text().map(|s| s.to_string()).collect::<String>().trim().to_string();
+    let who = iter.next().with_context(|| "Couldn't find submission author.")?
+        .text().map(|s| s.to_string()).collect::<String>().trim().to_string();
+    let problem = iter.next().with_context(|| "Couldn't find submission problem.")?
+        .text().map(|s| s.to_string()).collect::<String>().trim().to_string();
+    let lang = iter.next().with_context(|| "Couldn't find submission language.")?
+        .text().map(|s| s.to_string()).collect::<String>().trim().to_string();
+    let verdict = iter.next().with_context(|| "Couldn't find submission verdict.")?
+        .text().map(|s| s.to_string()).collect::<String>().trim().to_string();
+    let time = iter.next().with_context(|| "Couldn't find result time.")?
+        .text().map(|s| s.to_string()).collect::<String>().trim().to_string();
+    let memory = iter.next().with_context(|| "Couldn't find result memory.")?
+        .text().map(|s| s.to_string()).collect::<String>().trim().to_string();
+    Ok(SubmissionInfo {
+        id,
+        when,
+        who, 
+        problem, 
+        lang, 
+        verdict, 
+        time, 
+        memory,
+    })
+}
+
+pub fn latest_submission_info(html: &Html) -> Result<SubmissionInfo> {
+    let table_selector = Selector::parse("table.status-frame-datatable").unwrap();
+    let tr_selector = Selector::parse("tr").unwrap();
+    let mut cur_latest = "0";
+    let mut submission_tr = None;
+    for table in html.select(&table_selector) {
+        for tr in table.select(&tr_selector) {
+            if let Some(sid) = tr.value().attr("data-submission-id") {
+                if cur_latest < sid {
+                    cur_latest = sid;
+                    submission_tr = Some(tr);
+                }
+            }
+        }
+    }
+    let submission_tr = submission_tr.with_context(|| "Failed to find submission in table.")?;
+    Ok(parse_submission_tr(&submission_tr)
+        .with_context(|| "Failed to parse submission information from table.")?)
+}
+
+pub fn submission_info(html: &Html, submission_id: &String) -> Result<SubmissionInfo> {
+    let table_selector = Selector::parse("table.status-frame-datatable").unwrap();
+    let tr_selector = Selector::parse("tr").unwrap();
+    for table in html.select(&table_selector) {
+        for tr in table.select(&tr_selector) {
+            if let Some(sid) = tr.value().attr("data-submission-id") {
+                if sid.to_string() == *submission_id {
+                    return Ok(parse_submission_tr(&tr).with_context(|| 
+                        "Failed to parse submission information from table.")?)
+                }
+            }
+        }
+    }
+    bail!("Failed to find submission in table.")
 }

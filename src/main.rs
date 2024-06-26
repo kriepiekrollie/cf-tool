@@ -5,40 +5,41 @@ mod cmd;
 mod config;
 mod files;
 mod utils;
+use cli::*;
 use clap::Parser;
 use anyhow::Result;
 
 fn main() -> Result<()> {
-    let args = cli::Cli::parse();
+    let args = Cli::parse();
     match args.command {
-        cli::Commands::Template(template_command_args) =>
+        Commands::Template(template_command_args) =>
             match template_command_args.command {
-                cli::TemplateCommands::Add =>
+                TemplateCommands::Add =>
                     cmd::template::add(),
-                cli::TemplateCommands::Delete(template_args) =>
+                TemplateCommands::Delete(template_args) =>
                     cmd::template::delete(template_args),
-                cli::TemplateCommands::Set(template_args) =>
+                TemplateCommands::Set(template_args) =>
                     cmd::template::set_default(template_args),
             },
         // // Maybe i add a "list" command like this?
-        // cli::Commands::List(list_command_args) =>
+        // Commands::List(list_command_args) =>
         //     match &list_command_args.command {
-        //         cli::ListCommands::Problems(contest_args) =>
+        //         ListCommands::Problems(contest_args) =>
         //             cmd::list::problems(&contest_args),
-        //         cli::ListCommands::Contests =>
+        //         ListCommands::Contests =>
         //             cms::list::contests(),
         //     }
-        cli::Commands::Login =>
+        Commands::Login =>
             cmd::login(),
-        cli::Commands::Parse(contest_args) =>
+        Commands::Parse(contest_args) =>
             cmd::parse(contest_args),
-        cli::Commands::Gen(template_args) =>
+        Commands::Gen(template_args) =>
             cmd::gen(template_args),
-        cli::Commands::Submit =>
+        Commands::Submit =>
             cmd::submit(),
-        cli::Commands::Test =>
+        Commands::Test =>
             cmd::test(),
-        cli::Commands::Source =>
+        Commands::Source =>
             cmd::source(),
     }
 }

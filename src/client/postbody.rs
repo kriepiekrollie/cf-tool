@@ -29,7 +29,7 @@ pub enum PostBody {
         #[serde(rename = "submittedProblemIndex")]
         problem_index: String,
         #[serde(rename = "programTypeId")]
-        language_id: String,
+        language_id: u8,
         source: String,
         #[serde(rename = "tabSize")]
         tab_size: u8,
