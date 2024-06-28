@@ -124,7 +124,6 @@ impl Client {
         Ok(())
     }
 
-
     pub fn login(&mut self, details: LoginDetails) -> Result<bool> {
         // Codeforces login page.
         let url = "https://codeforces.com/enter";

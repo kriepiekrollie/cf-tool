@@ -135,7 +135,8 @@ pub fn submit() -> Result<()> {
         print!("{}", ansi_escapes::CursorLeft);
         io::stdout().flush().unwrap();
     }
-    if submission_info.verdict == String::from("Accepted") {
+    if submission_info.verdict == String::from("Accepted") || 
+       submission_info.verdict.contains("passed") {
         println!("  Verdict: {}                   ", submission_info.verdict.green().bold());
     } else {
         println!("  Verdict: {}                   ", submission_info.verdict.red().bold());
